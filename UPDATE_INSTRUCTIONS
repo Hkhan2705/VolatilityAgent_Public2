@@ -7,3 +7,7 @@ Go to https://share.streamlit.io/  and reboot the app
 
 Streamlit Community Cloud will detect the push to your repository and will redeploy your app with the new data files.
 Your public link remains the same, but the data behind it will be fresh.
+
+
+to change text headers etc, just modify local file, then commit push it via github desktop,
+then reboot the streamlit app
