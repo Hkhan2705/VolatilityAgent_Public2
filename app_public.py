@@ -157,4 +157,4 @@ else:
                     st.pyplot(fig)
 
 st.markdown("---")
-st.write("Built by a Hayyan Khan")
+st.write("Built by Hayyan Khan")
