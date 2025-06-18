@@ -108,7 +108,7 @@ def plot_volatility_analysis(ticker):
 
 # --- Main Application UI ---
 st.set_page_config(layout="wide")
-st.title("📊 S&P 500 Volatility Screener (Snapshot)")
+st.title("📊 S&P 500 Volatility Screener")
 
 # Get the last modified date of a sample data file to show data freshness
 try:
@@ -131,12 +131,12 @@ else:
     st.subheader("Volatility Screener Results (Sorted by IV Rank)")
     st.dataframe(format_df_for_display(final_df_sorted), use_container_width=True)
 
-    st.subheader("Detailed Volatility Analysis")
+    st.subheader("HV vs IV Analysis (30-day constant maturity)")
 
     tab1, tab2 = st.tabs(["Analyze from Scan Results", "Analyze Any Ticker"])
 
     with tab1:
-        st.write("Select a stock from the high IV Rank list above.")
+        st.write("Select a stock from the IV Rank list above.")
         selected_ticker_from_list = st.selectbox(
             "Choose a stock:", options=final_df_sorted['Ticker'].tolist(), key="selectbox_public"
         )
@@ -148,7 +148,7 @@ else:
                     st.pyplot(fig)
 
     with tab2:
-        st.write("Enter any valid stock ticker for a custom volatility analysis.")
+        st.write("Enter any valid stock ticker (in the S&P500) for a time-series volatility analysis.")
         custom_ticker = st.text_input("Custom Ticker (e.g., SPY, QQQ):", "", key="text_input_public").upper()
         if custom_ticker and st.button(f"Generate Volatility Plot for {custom_ticker}", key="button_custom_public"):
             with st.spinner(f"Loading plot data for {custom_ticker}..."):
@@ -157,4 +157,4 @@ else:
                     st.pyplot(fig)
 
 st.markdown("---")
-st.write("Built by a Volatility Agent.")
+st.write("Built by a Hayyan Khan")

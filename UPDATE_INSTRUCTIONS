@@ -1,7 +1,9 @@
-Run your local app (app3.py) again.
+Run your local app (app4.py) again.
 This will connect to your TWS and update all the .parquet files in your local local_data_store folder with the latest data.
-Copy the updated local_data_store folder into your VolatilityScreener-Public folder, overwriting the old one
+The updated local_data_store folder into your VolatilityScreener-Public folde should overwrite the old one
 - use github desktop app to commit all the files
 Commit and push the changes to your GitHub repository.
-Streamlit Community Cloud will automatically detect the push to your repository and will redeploy your app with the new data files.
+Go to https://share.streamlit.io/  and reboot the app
+
+Streamlit Community Cloud will detect the push to your repository and will redeploy your app with the new data files.
 Your public link remains the same, but the data behind it will be fresh.
