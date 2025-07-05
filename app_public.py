@@ -10,30 +10,20 @@ DATA_DIR = "local_data_store"
 
 @st.cache_data(show_spinner="Loading volatility data from cache...")
 def build_df_from_local_cache():
-    """
-    Quickly builds the main DataFrame by reading all pre-downloaded Parquet files
-    from the local_data_store directory.
-    """
+    # ... (This function is correct and remains unchanged) ...
     results = []
-
     if not os.path.exists(DATA_DIR):
         return pd.DataFrame()
-
     parquet_files = [f for f in os.listdir(DATA_DIR) if f.endswith('.parquet')]
-
     for filename in parquet_files:
         ticker = os.path.splitext(filename)[0]
         file_path = os.path.join(DATA_DIR, filename)
-
         try:
             vol_data = pd.read_parquet(file_path)
-
             offset = pd.tseries.frequencies.to_offset("1YE")
             df_1y = vol_data[vol_data.index >= vol_data.index.max() - offset]
-
             if df_1y.empty or 'IV_30D' not in df_1y.columns or 'HV_30D' not in df_1y.columns or len(df_1y) < 20:
                 continue
-
             iv_series = df_1y['IV_30D']
             current_iv = iv_series.iloc[-1]
             iv_low_52wk = iv_series.min()
@@ -42,22 +32,19 @@ def build_df_from_local_cache():
                                                                                                iv_high_52wk - iv_low_52wk) > 0 else np.nan
             current_hv = df_1y['HV_30D'].iloc[-1]
             iv_hv_ratio = current_iv / current_hv if not (np.isnan(current_hv) or current_hv == 0) else np.nan
-
             if pd.isna(iv_rank) or pd.isna(iv_hv_ratio):
                 continue
-
             results.append({
                 "Ticker": ticker, "Current IV": current_iv,
                 "IV Rank (1Y)": iv_rank, "IV/HV Ratio": iv_hv_ratio
             })
         except Exception:
             continue
-
     return pd.DataFrame(results) if results else pd.DataFrame()
 
 
 def format_df_for_display(df):
-    """Formats the main DataFrame for better visual presentation in Streamlit."""
+    # ... (This function is correct and remains unchanged) ...
     if df.empty: return df
     df_display = df.copy()
     if 'Current IV' in df_display.columns:
@@ -86,20 +73,33 @@ def plot_volatility_analysis(ticker):
     fig.suptitle(f'Historical vs. Implied Volatility for {ticker}', fontsize=16, y=0.99)
 
     for i, (name, period) in enumerate(timeframes.items()):
+        # *** THIS IS THE CORRECTED, ROBUST LOGIC ***
+        plot_data = pd.DataFrame()  # Start with an empty DataFrame
         if period == 'YTD':
-            plot_data = vol_data[str(datetime.now().year)]
+            # Check if there is any data for the current year before trying to slice
+            current_year_str = str(datetime.now().year)
+            if not vol_data[current_year_str].empty:
+                plot_data = vol_data[current_year_str]
         else:
             offset = pd.tseries.frequencies.to_offset(period)
             plot_data = vol_data[vol_data.index >= vol_data.index.max() - offset]
+        # *** END OF CORRECTED LOGIC ***
 
         ax = axes[i]
-        ax.plot(plot_data.index, plot_data['HV_30D'], label='30-Day Historical Vol (HV)', color='royalblue')
-        if 'IV_30D' in plot_data.columns and not plot_data['IV_30D'].isnull().all():
-            ax.plot(plot_data.index, plot_data['IV_30D'], label='30-Day Implied Vol (IV)', color='red')
+
+        # Only plot if we have data for this timeframe
+        if not plot_data.empty:
+            ax.plot(plot_data.index, plot_data['HV_30D'], label='30-Day Historical Vol (HV)', color='royalblue')
+            if 'IV_30D' in plot_data.columns and not plot_data['IV_30D'].isnull().all():
+                ax.plot(plot_data.index, plot_data['IV_30D'], label='30-Day Implied Vol (IV)', color='red')
+            ax.legend()
+        else:
+            ax.text(0.5, 0.5, 'No Data Available for this Timeframe', horizontalalignment='center',
+                    verticalalignment='center', transform=ax.transAxes)
+
         ax.set_title(name)
         ax.set_ylabel("Annualized Volatility")
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.0%}'))
-        ax.legend()
         ax.grid(True, linestyle='--')
 
     plt.tight_layout(rect=[0, 0, 1, 0.97])
@@ -110,22 +110,17 @@ def plot_volatility_analysis(ticker):
 st.set_page_config(layout="wide")
 st.title("📊 S&P 500 Volatility Screener (Snapshot)")
 
-# *** THIS IS THE CORRECTED LOGIC FOR THE DATE DISPLAY ***
 try:
     sample_file_path = os.path.join(DATA_DIR, "AAPL.parquet")
     if os.path.exists(sample_file_path):
-        # Read the sample file into a pandas DataFrame
         sample_df = pd.read_parquet(sample_file_path)
-        # Get the last date from the DataFrame's index
         last_data_date = sample_df.index.max()
-        # Convert it to a readable date format
         last_updated_str = last_data_date.strftime('%Y-%m-%d')
         st.write(f"This application displays a snapshot of volatility data. **Data as of: {last_updated_str}**")
     else:
         st.write("This application displays a snapshot of volatility data. (Data files not found).")
 except Exception:
     st.write("This application displays a snapshot of volatility data.")
-# *** END OF CORRECTED LOGIC ***
 
 full_df = build_df_from_local_cache()
 
