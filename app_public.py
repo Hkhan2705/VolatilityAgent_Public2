@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
 
-# This public app has no dependency on ib_insync or VolatilityCharter classes.
-
 DATA_DIR = "local_data_store"
 
 
@@ -30,7 +28,6 @@ def build_df_from_local_cache():
         try:
             vol_data = pd.read_parquet(file_path)
 
-            # Use modern pandas slicing to avoid FutureWarning
             offset = pd.tseries.frequencies.to_offset("1YE")
             df_1y = vol_data[vol_data.index >= vol_data.index.max() - offset]
 
@@ -41,10 +38,8 @@ def build_df_from_local_cache():
             current_iv = iv_series.iloc[-1]
             iv_low_52wk = iv_series.min()
             iv_high_52wk = iv_series.max()
-
             iv_rank = (current_iv - iv_low_52wk) / (iv_high_52wk - iv_low_52wk) if (
                                                                                                iv_high_52wk - iv_low_52wk) > 0 else np.nan
-
             current_hv = df_1y['HV_30D'].iloc[-1]
             iv_hv_ratio = current_iv / current_hv if not (np.isnan(current_hv) or current_hv == 0) else np.nan
 
@@ -65,7 +60,6 @@ def format_df_for_display(df):
     """Formats the main DataFrame for better visual presentation in Streamlit."""
     if df.empty: return df
     df_display = df.copy()
-    # Adding checks to prevent errors if columns are missing
     if 'Current IV' in df_display.columns:
         df_display['Current IV'] = df_display['Current IV'].map('{:.2%}'.format)
     if 'IV Rank (1Y)' in df_display.columns:
@@ -118,22 +112,21 @@ st.title("📊 S&P 500 Volatility Screener (Snapshot)")
 
 # *** THIS IS THE CORRECTED LOGIC FOR THE DATE DISPLAY ***
 try:
-    # Pick a sample file to check its modification date
     sample_file_path = os.path.join(DATA_DIR, "AAPL.parquet")
     if os.path.exists(sample_file_path):
-        # Get the timestamp from the file system
-        last_modified_time = os.path.getmtime(sample_file_path)
+        # Read the sample file into a pandas DataFrame
+        sample_df = pd.read_parquet(sample_file_path)
+        # Get the last date from the DataFrame's index
+        last_data_date = sample_df.index.max()
         # Convert it to a readable date format
-        last_updated_date = datetime.fromtimestamp(last_modified_time).strftime('%Y-%m-%d')
-        st.write(f"This application displays a snapshot of volatility data. **Data as of: {last_updated_date}**")
+        last_updated_str = last_data_date.strftime('%Y-%m-%d')
+        st.write(f"This application displays a snapshot of volatility data. **Data as of: {last_updated_str}**")
     else:
-        st.write("This application displays a snapshot of volatility data.")
+        st.write("This application displays a snapshot of volatility data. (Data files not found).")
 except Exception:
-    # Fallback message if something goes wrong
     st.write("This application displays a snapshot of volatility data.")
 # *** END OF CORRECTED LOGIC ***
 
-# Load the main data frame from the local cache
 full_df = build_df_from_local_cache()
 
 if full_df.empty:
