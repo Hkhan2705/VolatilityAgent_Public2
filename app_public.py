@@ -73,21 +73,21 @@ def plot_volatility_analysis(ticker):
     fig.suptitle(f'Historical vs. Implied Volatility for {ticker}', fontsize=16, y=0.99)
 
     for i, (name, period) in enumerate(timeframes.items()):
-        # *** THIS IS THE CORRECTED, ROBUST LOGIC ***
         plot_data = pd.DataFrame()  # Start with an empty DataFrame
+
+        # *** THIS IS THE CORRECT, ROBUST LOGIC FOR YTD ***
         if period == 'YTD':
-            # Check if there is any data for the current year before trying to slice
-            current_year_str = str(datetime.now().year)
-            if not vol_data[current_year_str].empty:
-                plot_data = vol_data[current_year_str]
+            current_year = datetime.now().year
+            # First, check if any data for this year exists in the index
+            if any(vol_data.index.year == current_year):
+                plot_data = vol_data[str(current_year)]
+        # *** END OF CORRECTED LOGIC ***
         else:
             offset = pd.tseries.frequencies.to_offset(period)
             plot_data = vol_data[vol_data.index >= vol_data.index.max() - offset]
-        # *** END OF CORRECTED LOGIC ***
 
         ax = axes[i]
 
-        # Only plot if we have data for this timeframe
         if not plot_data.empty:
             ax.plot(plot_data.index, plot_data['HV_30D'], label='30-Day Historical Vol (HV)', color='royalblue')
             if 'IV_30D' in plot_data.columns and not plot_data['IV_30D'].isnull().all():
